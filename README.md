@@ -1,6 +1,6 @@
 # Free version of spiltwise
 
-2023/12/31 POC complete with mongoDB, Java Bootstrap, React and WindTail.
+2023/12/31 POC complete with mongoDB, Java Bootstrap, React and Tailwind CSS.
 
 # Getting Started with Create React App
 
