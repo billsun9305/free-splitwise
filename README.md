@@ -1,3 +1,7 @@
+# Free version of spiltwise
+
+2023/12/31 POC complete with mongoDB, Java Bootstrap, React and WindTail.
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
