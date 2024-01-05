@@ -25,7 +25,8 @@ function App() {
 
   const fetchEntries = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/entries');
+      // const response = await fetch('http://localhost:8080/api/entries');
+      const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries');
       const data = await response.json();
       setEntries(data);
     } catch (error) {
