@@ -37,7 +37,7 @@ function App() {
     // Add entry to the backend
   const addEntry = async (newEntry) => {
     try {
-      const response = await fetch('http://localhost:8080/api/entries', {
+      const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
