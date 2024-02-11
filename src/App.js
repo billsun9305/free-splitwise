@@ -1,4 +1,3 @@
-import logo from './logo.png';
 import './App.css';
 
 import React, { useState, useEffect} from 'react';
@@ -40,8 +39,8 @@ function App() {
 
   const fetchEntries = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/entries');
-      // const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries');
+      // const response = await fetch('http://localhost:8080/api/entries');
+      const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries');
       const data = await response.json();
       setEntries(data);
       // setEntries(data.map(entry => ({ ...entry, id: entry.id })));
@@ -53,8 +52,8 @@ function App() {
     // Add entry to the backend
   const addEntry = async (newEntry) => {
     try {
-      const response = await fetch('http://localhost:8080/api/entries', {
-      // const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries', {
+      // const response = await fetch('http://localhost:8080/api/entries', {
+      const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +74,9 @@ function App() {
   // Function to delete entry
   const deleteEntry = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/entries/${id}`, {
+      // const response = await fetch(`http://localhost:8080/api/entries/${id}`, {
+      const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries/${id}', {
+
         method: 'DELETE',
       });
       if (response.ok) {
@@ -90,7 +91,9 @@ function App() {
 
   const updateEntry = async (updatedEntry) => {
     try {
-      const response = await fetch('http://localhost:8080/api/entries', {
+      // const response = await fetch('http://localhost:8080/api/entries', {
+      const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries', {
+
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
