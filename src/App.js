@@ -1,4 +1,4 @@
-import logo from './logo.svg';
+import logo from './logo.png';
 import './App.css';
 
 import React, { useState, useEffect} from 'react';
@@ -25,7 +25,7 @@ function App() {
 
   const fetchEntries = async () => {
     try {
-      // const response = await fetch('http://localhost:8080/api/entries');
+      //const response = await fetch('http://localhost:8080/api/entries');
       const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries');
       const data = await response.json();
       setEntries(data);
@@ -38,6 +38,7 @@ function App() {
   const addEntry = async (newEntry) => {
     try {
       const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries', {
+      //const response = await fetch('http://localhost:8080/api/entries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
