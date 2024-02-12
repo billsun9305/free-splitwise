@@ -75,7 +75,7 @@ function App() {
   const deleteEntry = async (id) => {
     try {
       // const response = await fetch(`http://localhost:8080/api/entries/${id}`, {
-      const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries/${id}', {
+      const response = await fetch(`https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries/${id}`, {
 
         method: 'DELETE',
       });
