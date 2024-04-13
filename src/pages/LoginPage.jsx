@@ -13,8 +13,8 @@ const LoginPage = () => {
     // Check for Google response token
     if (response.credential) {
       try {
-        // const res = await fetch('http://localhost:8080/api/authenticate/', {
-        const res = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/authenticate/', {
+        const res = await fetch('http://localhost:8080/api/authenticate/', {
+        // const res = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/authenticate/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: response.credential }),
