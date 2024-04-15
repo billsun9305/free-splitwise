@@ -6,8 +6,9 @@ function LogoutButton({ className }) {
 
   const logout = async () => {
     try {
+      await fetch('https://api.splitwise.world.herokuapp.com/logout', {
       // await fetch('http://localhost:8080/logout', {
-      await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/logout', {
+      // await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/logout', {
         credentials: 'include', // Ensure cookies, such as session cookies, are sent with the request
         redirect: 'follow' // This might be the default, allows following redirects automatically
       });

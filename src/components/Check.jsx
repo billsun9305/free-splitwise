@@ -41,8 +41,9 @@ const Check = () => {
       const fetchEntries = async () => {
         try {
           console.log("Fetch entry with group id = " + groupId);
+          const response = await fetch(`https://api.splitwise.world/api/entries?groupId=${groupId}`, {
           // const response = await fetch(`http://localhost:8080/api/entries?groupId=${groupId}`, {
-          const response = await fetch(`https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries?groupId=${groupId}`, {
+          // const response = await fetch(`https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries?groupId=${groupId}`, {
 
             credentials: 'include', // Ensure cookies, such as session cookies, are sent with the request
             redirect: 'follow' // This might be the default, allows following redirects automatically
@@ -61,8 +62,10 @@ const Check = () => {
       // Add entry to the backend
     const addEntry = async (newEntry) => {
       try {
+        const response = await fetch('https://api.splitwise.world/api/entries', {
+
         // const response = await fetch('http://localhost:8080/api/entries', {
-        const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries', {
+        // const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -85,8 +88,10 @@ const Check = () => {
     // Function to delete entry
     const deleteEntry = async (id) => {
       try {
+        const response = await fetch(`https://api.splitwise.world/api/entries/${id}`, {
+
         // const response = await fetch(`http://localhost:8080/api/entries/${id}`, {
-        const response = await fetch(`https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries/${id}`, {
+        // const response = await fetch(`https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries/${id}`, {
   
           method: 'DELETE',
           credentials: 'include', // Ensure cookies, such as session cookies, are sent with the request
@@ -104,8 +109,10 @@ const Check = () => {
   
     const updateEntry = async (updatedEntry) => {
       try {
+        const response = await fetch('https://api.splitwise.world/api/entries', {
+
         // const response = await fetch('http://localhost:8080/api/entries', {
-        const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries', {
+        // const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/entries', {
   
           method: 'PUT',
           headers: {

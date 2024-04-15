@@ -9,7 +9,9 @@ const Group = () => {
   // Function to fetch groups
   const fetchGroups = async () => {
     try {
-      const response = await fetch('https://pheasant-lucky-owl.ngrok-free.app/api/groups/all', {
+      const response = await fetch('https://api.splitwise.world/api/groups/all/', {
+
+      // const response = await fetch('http://pheasant-lucky-owl.ngrok-free.app/api/groups/all', {
       // const response = await fetch('http://localhost:8080/api/groups/all', {
       // const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/groups/all/', {
         credentials: 'include', // Ensure cookies, such as session cookies, are sent with the request
