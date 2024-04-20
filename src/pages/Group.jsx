@@ -9,7 +9,7 @@ const Group = () => {
   // Function to fetch groups
   const fetchGroups = async () => {
     try {
-      const response = await fetch('https://api.splitwise.world/api/groups/all/', {
+      const response = await fetch('https://api.splitwise.world/api/groups/all', {
 
       // const response = await fetch('http://pheasant-lucky-owl.ngrok-free.app/api/groups/all', {
       // const response = await fetch('http://localhost:8080/api/groups/all', {
