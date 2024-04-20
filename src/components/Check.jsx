@@ -49,7 +49,6 @@ const Check = () => {
             redirect: 'follow' // This might be the default, allows following redirects automatically
           });
           const data = await response.json();
-          console.log("data = " + data)
           setEntries(data);
           // setEntries(data.map(entry => ({ ...entry, id: entry.id })));
         } catch (error) {
