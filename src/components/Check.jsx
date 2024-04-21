@@ -148,12 +148,12 @@ const Check = () => {
 
     return (
       <div className="min-h-screen bg-gradient-to-r from-blue-500 to-teal-400">
-        <div className="container mx-auto max-w-5xl p-10">
-          <div className="flex justify-between items-center mb-10">
+        <div className="container mx-auto px-2 sm:px-10 max-w-5xl py-10">
+          <div className="px-2 sm:px-10 flex justify-between items-center mb-10">
             <h1 className="text-4xl font-bold text-white">Check Details</h1>
             <LogoutButton className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-lg transition ease-in duration-200" />
           </div>
-          <div className="bg-white p-6 rounded-lg shadow-lg">
+          <div className="bg-white px-0 sm:p-6 rounded-lg shadow-lg">
             <EntryForm
               handleSubmit={handleSubmit}
               handleInputChange={handleInputChange}

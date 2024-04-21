@@ -2,14 +2,15 @@ import React from 'react';
 
 const EntryList = ({ entries, handleEditChange, saveEditEntry, startEditEntry, deleteEntry, editingId }) => {
   return (
-    <div className="my-4 mx-auto max-w-4xl">
-      <table className="table-fixed w-full text-left">
+    <div className="my-4 px-0 sm:mx-auto max-w-4xl overflow-x-auto sm:overflow-x-visible">
+      <table className="w-full text-left text-sm sm:text-base">
         <thead className="bg-gray-800 text-white">
           <tr>
-            <th className="w-1/4 px-4 py-2">Date</th>
-            <th className="w-1/4 px-4 py-2">Title</th>
-            <th className="w-1/4 px-4 py-2">Amount</th>
-            <th className="w-1/4 px-4 py-2">Actions</th>
+            <th className="w-1/3 sm:w-1/4 px-4 py-2">Date</th>
+            <th className="w-1/3 sm:w-1/4 px-4 py-2">Title</th>
+            <th className="w-1/6 sm:w-1/4 px-4 py-2">Amount</th>
+            {/* <th className="w-1/4 px-4 py-2 hidden sm:table-cell">Actions</th> */}
+            <th className="w-1/6 sm:w-1/4 px-4 py-2">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -55,6 +56,7 @@ const EntryList = ({ entries, handleEditChange, saveEditEntry, startEditEntry, d
                   <td className="border px-4 py-2">{entry.date}</td>
                   <td className="border px-4 py-2">{entry.title}</td>
                   <td className="border px-4 py-2">{entry.amount}</td>
+                  {/* <td className="border px-4 py-2 text-right hidden sm:table-cell"> */}
                   <td className="border px-4 py-2 text-right">
                     <div className="flex justify-end items-center space-x-2">
                       <button

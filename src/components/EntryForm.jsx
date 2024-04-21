@@ -2,7 +2,7 @@ import React from 'react';
 
 const EntryForm = ({ handleSubmit, handleInputChange, form, editingId }) => {
   return (
-    <div className="mx-auto my-10 p-6 bg-white rounded shadow">
+    <div className="mx-auto my-10 p-6 max-w-4xl bg-white rounded shadow">
       {editingId && <h2 className="text-lg mb-4 text-center">Editing Entry</h2>}
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="mb-4">
