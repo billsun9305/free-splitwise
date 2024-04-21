@@ -15,7 +15,7 @@ const BackButton = () => {
       aria-label="Back to Group"
     >
       <img src="/images/back-arrow.png" alt="Back" className="h-6 w-6" /> 
-      <div className="text-xl font-bold">Groups</div>
+      <div className="text-xl font-bold hidden sm:visible">Groups</div>
     </button>
   );
 };
