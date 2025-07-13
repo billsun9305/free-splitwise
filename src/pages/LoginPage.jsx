@@ -1,6 +1,7 @@
 import React from 'react';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
+import apiService from '../config/api';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -13,22 +14,9 @@ const LoginPage = () => {
     // Check for Google response token
     if (response.credential) {
       try {
-        const res = await fetch('https://api.splitwise.world/api/authenticate', {
-        // const res = await fetch('https://pheasant-lucky-owl.ngrok-free.app/api/authenticate', {
-        // const res = await fetch('http://localhost:8080/api/authenticate', {
-        // const res = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/authenticate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: response.credential }),
-          credentials: 'include'  // Ensure cookies are included
-        });
-        if (res.ok) {
-          console.log("Login successfully.")
-          navigate('/groups');
-        } else {
-          // Handle errors, such as showing a message to the user
-          console.error('Failed to login:', await res.text());
-        }
+        await apiService.authenticate(response.credential);
+        console.log("Login successfully.")
+        navigate('/groups');
       } catch (error) {
         if (error instanceof SyntaxError) {
           console.error('Received non-JSON response from the server. Raw response:', error);

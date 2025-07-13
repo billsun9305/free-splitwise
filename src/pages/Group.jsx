@@ -2,27 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import LogoutButton from '../components/LogoutButton';
 import NewGroupModal from '../components/NewGroupModal';
+import JoinGroupModal from '../components/JoinGroupModal';
+import apiService from '../config/api';
 
 
 const Group = () => {
   const [groups, setGroups] = useState([]); // Initialize groups as an empty array
   const [showForm, setShowForm] = useState(false); // State to show/hide the form
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const [shouldFetchGroups, setShouldFetchGroups] = useState(true);
 
   // Function to fetch groups
   const fetchGroups = async () => {
     try {
-      const response = await fetch('https://api.splitwise.world/api/groups/all', {
-      // const response = await fetch('http://pheasant-lucky-owl.ngrok-free.app/api/groups/all', {
-      // const response = await fetch('http://localhost:8080/api/groups/all', {
-      // const response = await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/api/groups/all/', {
-        credentials: 'include', // Ensure cookies, such as session cookies, are sent with the request
-        redirect: 'follow' // This might be the default, allows following redirects automatically
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
+      const data = await apiService.getAllGroups();
       setGroups(data); // Set fetched groups to state
       setShouldFetchGroups(false);
     } catch (error) {
@@ -35,30 +28,12 @@ const Group = () => {
     console.log(`Creating group: ${groupName}`);
     
     try {
-      const response = await fetch('https://api.splitwise.world/api/groups', {
-        // const response = await fetch('http://localhost:8080/api/groups', {
-
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name: groupName }), // Send the group name in the body
-      });
-  
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
+      const data = await apiService.createGroup(groupName);
       console.log('Group created:', data);
       setShouldFetchGroups(true);
     } catch (error) {
       console.error("Could not create group: ", error);
     }
-
-
-    // Once created, fetch the groups again to update the list
-    // fetchGroups();
   };
   
   // Effect for fetching groups initially when component mounts and after adding a new group
@@ -70,6 +45,14 @@ const Group = () => {
 
   const toggleForm = () => {
     setShowForm(!showForm);
+  };
+
+  const toggleJoinModal = () => {
+    setShowJoinModal(!showJoinModal);
+  };
+
+  const handleGroupJoined = () => {
+    setShouldFetchGroups(true);
   };
 
   return (
@@ -87,6 +70,12 @@ const Group = () => {
         >
           New Group
         </button>
+        <button 
+          onClick={toggleJoinModal} 
+          className="ml-4 text-sm bg-purple-600 hover:bg-purple-800 text-white font-bold my-2 py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        >
+          Join Group
+        </button>
 
         <NewGroupModal 
           isOpen={showForm} 
@@ -94,19 +83,30 @@ const Group = () => {
           createGroup={createGroup} 
         />
 
+        <JoinGroupModal 
+          isOpen={showJoinModal} 
+          toggleModal={toggleJoinModal} 
+          onGroupJoined={handleGroupJoined} 
+        />
+
         <div className="bg-white p-6 rounded-lg shadow-lg">
           {groups.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Group cards */}
               {groups.map(group => (
-                <div key={group.id} className="flex flex-col items-center justify-center p-4 bg-white rounded-lg border border-gray-200 hover:shadow-xl transition duration-300">
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">{group.name}</h3>
-                  <Link
-                    to={`/checks/${group.id}`}
-                    className="inline-block bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded transition duration-300 ease-in-out"
-                  >
-                    View Check
-                  </Link>
+                <div key={group.id} className="flex flex-col items-center justify-center p-6 bg-white rounded-lg border border-gray-200 hover:shadow-xl transition duration-300">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">{group.name}</h3>
+                  <div className="flex flex-col w-full space-y-2">
+                    <Link
+                      to={`/checks/${group.id}`}
+                      className="w-full text-center bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white py-3 px-4 rounded-lg font-semibold transition duration-300 ease-in-out shadow-md"
+                    >
+                      💰 Manage Expenses
+                    </Link>
+                    <div className="text-xs text-gray-500 text-center mt-2">
+                      Split bills • Track balances • Simple entries
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

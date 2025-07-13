@@ -3,11 +3,24 @@ import React, { useState } from 'react';
 
 const NewGroupFormModal = ({ isOpen, toggleModal, createGroup }) => {
   const [newGroupName, setNewGroupName] = useState('');
+  const [isPublic, setIsPublic] = useState(true);
+  const [password, setPassword] = useState('');
 
   const handleGroupCreation = (event) => {
     event.preventDefault();
-    createGroup(newGroupName);
+    const groupData = {
+      name: newGroupName,
+      isPublic,
+      memberIds: []
+    };
+    if (!isPublic && password) {
+      groupData.password = password;
+    }
+    console.log('Group data being sent to API:', groupData);
+    createGroup(groupData);
     setNewGroupName('');
+    setIsPublic(true);
+    setPassword('');
     toggleModal();
   };
 
@@ -26,6 +39,27 @@ const NewGroupFormModal = ({ isOpen, toggleModal, createGroup }) => {
               required
               className="px-4 py-2 border rounded-md focus:outline-none focus:border-blue-300 w-full"
             />
+            <div className="mt-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  className="mr-2"
+                />
+                Public Group (No password required)
+              </label>
+            </div>
+            {!isPublic && (
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter group password"
+                required
+                className="mt-2 px-4 py-2 border rounded-md focus:outline-none focus:border-blue-300 w-full"
+              />
+            )}
             <button 
               type="submit" 
               className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"

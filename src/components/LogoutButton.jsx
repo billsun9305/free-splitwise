@@ -1,18 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiService from '../config/api';
 
 function LogoutButton({ className }) {
   const navigate = useNavigate();
 
   const logout = async () => {
     try {
-      await fetch('https://api.splitwise.world/app/logout', {
-      // await fetch('http://localhost:8080/app/logout', {
-        method: 'POST',
-      // await fetch('https://free-splitwise-f7e9136cd3b7.herokuapp.com/logout', {
-        credentials: 'include', // Ensure cookies, such as session cookies, are sent with the request
-        redirect: 'follow' // This might be the default, allows following redirects automatically
-      });
+      await apiService.logout();
       // Here you can also clear any user state in your application
       navigate('/login'); // Redirect to login page
     } catch (error) {
