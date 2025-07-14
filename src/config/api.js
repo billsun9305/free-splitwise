@@ -28,7 +28,7 @@ const API_CONFIG = {
     }
   },
   production: {
-    baseURL: 'https://api.splitwise.world',
+    baseURL: 'https://free-splitwise-f7e9136cd3b7.herokuapp.com/',
     endpoints: {
       authenticate: '/api/authenticate',
       groups: '/api/groups',
