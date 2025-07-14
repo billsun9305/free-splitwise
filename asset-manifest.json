@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/free-splitwise/static/css/main.a152e6bc.css",
-    "main.js": "/free-splitwise/static/js/main.0febfa58.js",
-    "index.html": "/free-splitwise/index.html",
-    "main.a152e6bc.css.map": "/free-splitwise/static/css/main.a152e6bc.css.map",
-    "main.0febfa58.js.map": "/free-splitwise/static/js/main.0febfa58.js.map"
+    "main.css": "/static/css/main.a152e6bc.css",
+    "main.js": "/static/js/main.0febfa58.js",
+    "index.html": "/index.html",
+    "main.a152e6bc.css.map": "/static/css/main.a152e6bc.css.map",
+    "main.0febfa58.js.map": "/static/js/main.0febfa58.js.map"
   },
   "entrypoints": [
     "static/css/main.a152e6bc.css",
