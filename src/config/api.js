@@ -105,6 +105,15 @@ class ApiService {
 
     const finalOptions = { ...defaultOptions, ...options };
     
+    // Debug headers for troubleshooting
+    if (endpoint.includes('leave')) {
+      console.log('🔍 DEBUG request headers for leave:', {
+        url,
+        headers: finalOptions.headers,
+        hasAuth: !!finalOptions.headers.Authorization
+      });
+    }
+    
     try {
       const response = await fetch(url, finalOptions);
       
@@ -158,6 +167,12 @@ class ApiService {
   }
 
   async leaveGroup(groupId) {
+    console.log('🔍 DEBUG leaveGroup:', {
+      groupId,
+      token: localStorage.getItem('jwt_token') ? 'Present' : 'Missing',
+      endpoint: `${this.endpoints.groupsLeave}/${groupId}`
+    });
+    
     return this.request(`${this.endpoints.groupsLeave}/${groupId}`, {
       method: 'POST'
     });
