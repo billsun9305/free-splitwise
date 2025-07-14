@@ -90,11 +90,15 @@ class ApiService {
   async request(endpoint, options = {}) {
     const url = this.buildUrl(endpoint);
     
+    // Get JWT token from localStorage
+    const token = localStorage.getItem('jwt_token');
+    
     const defaultOptions = {
       credentials: 'include',
       redirect: 'follow',
       headers: {
         'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }), // Add JWT token if available
         ...options.headers
       }
     };
@@ -289,6 +293,14 @@ class ApiService {
     return this.request(`${this.endpoints.splitsUnpaid}?groupId=${groupId}&userId=${userId}`);
   }
 }
+
+// Token management utilities
+export const tokenManager = {
+  getToken: () => localStorage.getItem('jwt_token'),
+  setToken: (token) => localStorage.setItem('jwt_token', token),
+  clearToken: () => localStorage.removeItem('jwt_token'),
+  isAuthenticated: () => !!localStorage.getItem('jwt_token')
+};
 
 // Export singleton instance
 const apiService = new ApiService();

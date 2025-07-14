@@ -14,7 +14,14 @@ const LoginPage = () => {
     // Check for Google response token
     if (response.credential) {
       try {
-        await apiService.authenticate(response.credential);
+        const authResponse = await apiService.authenticate(response.credential);
+        
+        // Store JWT token if returned
+        if (authResponse && authResponse.token) {
+          localStorage.setItem('jwt_token', authResponse.token);
+          console.log("JWT token stored successfully");
+        }
+        
         console.log("Login successfully.")
         navigate('/groups');
       } catch (error) {
