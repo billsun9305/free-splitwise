@@ -11,6 +11,7 @@ const Group = () => {
   const [showForm, setShowForm] = useState(false); // State to show/hide the form
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [shouldFetchGroups, setShouldFetchGroups] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Function to fetch groups
   const fetchGroups = async () => {
@@ -53,6 +54,23 @@ const Group = () => {
 
   const handleGroupJoined = () => {
     setShouldFetchGroups(true);
+  };
+
+  const handleDeleteGroup = async (groupId, groupName) => {
+    const confirmed = window.confirm(`Are you sure you want to delete the group "${groupName}"? This action cannot be undone.`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await apiService.deleteGroup(groupId);
+      alert(`Group "${groupName}" has been deleted successfully.`);
+      setShouldFetchGroups(true);
+    } catch (error) {
+      console.error("Could not delete group: ", error);
+      alert(`Failed to delete group: ${error.message}`);
+    }
   };
 
   return (
@@ -103,6 +121,12 @@ const Group = () => {
                     >
                       💰 Manage Expenses
                     </Link>
+                    <button
+                      onClick={() => handleDeleteGroup(group.id, group.name)}
+                      className="w-full text-center bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-2 px-4 rounded-lg font-semibold transition duration-300 ease-in-out shadow-md"
+                    >
+                      🗑️ Delete Group
+                    </button>
                     <div className="text-xs text-gray-500 text-center mt-2">
                       Split bills • Track balances • Simple entries
                     </div>
