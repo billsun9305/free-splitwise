@@ -22,6 +22,8 @@ const Check = () => {
     const [newPassword, setNewPassword] = useState('');
     const [showPasswordForm, setShowPasswordForm] = useState(false);
     const [error, setError] = useState('');
+    const [simpleEntrySortBy, setSimpleEntrySortBy] = useState('date-desc');
+    const [sortedEntries, setSortedEntries] = useState([]);
 
     const handleInputChange = (event) => {
       const { name, value } = event.target;
@@ -45,6 +47,9 @@ const Check = () => {
       setEntries(entries.map(entry =>
         entry.id === id ? { ...entry, [field]: value } : entry
       ));
+      setSortedEntries(sortedEntries.map(entry =>
+        entry.id === id ? { ...entry, [field]: value } : entry
+      ));
     };
   
     // If the effect doesn't rely on any props or state that change, it can be safe to omit functions from the dependency array — just be aware that this is more of an exception to the rule.
@@ -61,6 +66,29 @@ const Check = () => {
       };
       fetchEntries();
     }, [groupId]);
+
+    // Sort entries whenever they change or sort criteria changes
+    useEffect(() => {
+      const sorted = [...entries].sort((a, b) => {
+        switch (simpleEntrySortBy) {
+          case 'date-desc':
+            return new Date(b.date) - new Date(a.date);
+          case 'date-asc':
+            return new Date(a.date) - new Date(b.date);
+          case 'amount-desc':
+            return parseFloat(b.amount) - parseFloat(a.amount);
+          case 'amount-asc':
+            return parseFloat(a.amount) - parseFloat(b.amount);
+          case 'title-asc':
+            return a.title.localeCompare(b.title);
+          case 'title-desc':
+            return b.title.localeCompare(a.title);
+          default:
+            return 0;
+        }
+      });
+      setSortedEntries(sorted);
+    }, [entries, simpleEntrySortBy]);
   
       // Add entry to the backend
     const addEntry = async (newEntry) => {
@@ -100,7 +128,7 @@ const Check = () => {
   
     // Function to save the edited entry
     const saveEditEntry = (id) => {
-      const entryToSave = entries.find(entry => entry.id === id);
+      const entryToSave = sortedEntries.find(entry => entry.id === id) || entries.find(entry => entry.id === id);
       updateEntry(entryToSave);
       setEditingId(null); // Exit edit mode
     };
@@ -276,7 +304,28 @@ const Check = () => {
               ) : (
                 <div>
                   {/* Simple Entries Section */}
-                  <h2 className="text-2xl font-bold text-gray-800 mb-6">Simple Entries</h2>
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-800">Simple Entries</h2>
+
+                    {/* Sorting Dropdown for Simple Entries */}
+                    <div className="flex items-center space-x-2">
+                      <label htmlFor="simple-sort-select" className="text-sm text-gray-600">Sort by:</label>
+                      <select
+                        id="simple-sort-select"
+                        value={simpleEntrySortBy}
+                        onChange={(e) => setSimpleEntrySortBy(e.target.value)}
+                        className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="date-desc">Date (Newest First)</option>
+                        <option value="date-asc">Date (Oldest First)</option>
+                        <option value="amount-desc">Amount (High to Low)</option>
+                        <option value="amount-asc">Amount (Low to High)</option>
+                        <option value="title-asc">Title (A-Z)</option>
+                        <option value="title-desc">Title (Z-A)</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <EntryForm
                     handleSubmit={handleSubmit}
                     handleInputChange={handleInputChange}
@@ -284,7 +333,7 @@ const Check = () => {
                     editingId={editingId}
                   />
                   <EntryList
-                    entries={entries}
+                    entries={sortedEntries}
                     handleEditChange={handleEditChange}
                     saveEditEntry={saveEditEntry}
                     startEditEntry={startEditEntry}

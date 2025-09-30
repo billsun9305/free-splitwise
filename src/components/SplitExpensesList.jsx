@@ -8,10 +8,38 @@ const SplitExpensesList = ({ groupId, refreshTrigger, onEdit }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [sortBy, setSortBy] = useState('date-desc');
+  const [filteredAndSortedEntries, setFilteredAndSortedEntries] = useState([]);
 
   useEffect(() => {
     fetchData();
   }, [groupId, refreshTrigger]);
+
+  useEffect(() => {
+    const sortedEntries = [...entries].sort((a, b) => {
+      switch (sortBy) {
+        case 'date-desc':
+          return new Date(b.date) - new Date(a.date);
+        case 'date-asc':
+          return new Date(a.date) - new Date(b.date);
+        case 'amount-desc':
+          return (b.amount || b.totalAmount) - (a.amount || a.totalAmount);
+        case 'amount-asc':
+          return (a.amount || a.totalAmount) - (b.amount || b.totalAmount);
+        case 'title-asc':
+          return a.title.localeCompare(b.title);
+        case 'title-desc':
+          return b.title.localeCompare(a.title);
+        case 'status':
+          const aSettled = a.splits?.every(split => split.isPaid || split.paid) ? 1 : 0;
+          const bSettled = b.splits?.every(split => split.isPaid || split.paid) ? 1 : 0;
+          return aSettled - bSettled;
+        default:
+          return 0;
+      }
+    });
+    setFilteredAndSortedEntries(sortedEntries);
+  }, [entries, sortBy]);
 
   const fetchData = async () => {
     if (!groupId) return;
@@ -255,15 +283,36 @@ const SplitExpensesList = ({ groupId, refreshTrigger, onEdit }) => {
 
       {/* Split Expenses List */}
       <div>
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Split Expenses</h3>
-        
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold text-gray-800">Split Expenses</h3>
+
+          {/* Sorting Dropdown */}
+          <div className="flex items-center space-x-2">
+            <label htmlFor="sort-select" className="text-sm text-gray-600">Sort by:</label>
+            <select
+              id="sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="date-desc">Date (Newest First)</option>
+              <option value="date-asc">Date (Oldest First)</option>
+              <option value="amount-desc">Amount (High to Low)</option>
+              <option value="amount-asc">Amount (Low to High)</option>
+              <option value="title-asc">Title (A-Z)</option>
+              <option value="title-desc">Title (Z-A)</option>
+              <option value="status">Settlement Status</option>
+            </select>
+          </div>
+        </div>
+
         {entries.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             No split expenses found. Create your first split expense!
           </div>
         ) : (
           <div className="space-y-4">
-            {entries.map((entry) => (
+            {filteredAndSortedEntries.map((entry) => (
               <div key={entry.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 {/* Entry Header */}
                 <div className="flex justify-between items-start mb-3">
