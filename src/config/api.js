@@ -24,6 +24,8 @@ const API_CONFIG = {
       groupsLeave: '/api/groups/leave',
       groupsRemoveMember: '/api/groups/remove-member',
       groupsUpdatePassword: '/api/groups/update-password',
+      groupsGenerateInvite: '/api/groups',
+      groupsJoinByInvite: '/api/groups/join-by-invite',
       logout: '/app/logout'
     }
   },
@@ -51,6 +53,8 @@ const API_CONFIG = {
       groupsLeave: '/api/groups/leave',
       groupsRemoveMember: '/api/groups/remove-member',
       groupsUpdatePassword: '/api/groups/update-password',
+      groupsGenerateInvite: '/api/groups',
+      groupsJoinByInvite: '/api/groups/join-by-invite',
       logout: '/app/logout'
     }
   }
@@ -116,17 +120,40 @@ class ApiService {
     
     try {
       const response = await fetch(url, finalOptions);
-      
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Try to get error details from response body
+        let errorBody = null;
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            errorBody = await response.json();
+          } else {
+            errorBody = await response.text();
+          }
+        } catch (parseError) {
+          console.error('Could not parse error response:', parseError);
+        }
+
+        const error = new Error(`HTTP error! status: ${response.status}`);
+        error.status = response.status;
+        error.statusText = response.statusText;
+        error.responseBody = errorBody;
+
+        console.error('=== API ERROR ===');
+        console.error('URL:', url);
+        console.error('Status:', response.status, response.statusText);
+        console.error('Response body:', errorBody);
+
+        throw error;
       }
-      
+
       // Handle different response types
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         return await response.json();
       }
-      
+
       return response;
     } catch (error) {
       console.error(`API request failed for ${endpoint}:`, error);
@@ -199,6 +226,20 @@ class ApiService {
   async deleteGroup(groupId) {
     return this.request(`${this.endpoints.groups}/${groupId}`, {
       method: 'DELETE'
+    });
+  }
+
+  async generateInviteLink(groupId, expirationDays = 7) {
+    return this.request(`${this.endpoints.groupsGenerateInvite}/${groupId}/generate-invite`, {
+      method: 'POST',
+      body: JSON.stringify({ expirationDays })
+    });
+  }
+
+  async joinByInvite(inviteToken) {
+    return this.request(this.endpoints.groupsJoinByInvite, {
+      method: 'POST',
+      body: JSON.stringify({ inviteToken })
     });
   }
 

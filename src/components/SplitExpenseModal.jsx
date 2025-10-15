@@ -41,15 +41,20 @@ const SplitExpenseModal = ({ isOpen, onClose, groupId, onExpenseCreated, existin
 
   // Handle existing entry data when users are loaded
   useEffect(() => {
-    if (existingEntry && users.length > 0) {
+    if (existingEntry && users.length > 0 && existingEntry.splits) {
       const selected = users.filter(u => existingEntry.splits.some(s => s.userId === u.id));
       setSelectedUsers(selected);
       const newPercentages = {};
       const newManualAmounts = {};
+      const totalAmount = existingEntry.totalAmount || existingEntry.amount;
+
       existingEntry.splits.forEach(s => {
         if (existingEntry.splitType === 'PERCENTAGE') {
-          newPercentages[s.userId] = (s.amount / existingEntry.totalAmount * 100);
+          newPercentages[s.userId] = (s.amount / totalAmount * 100).toFixed(2);
         } else if (existingEntry.splitType === 'MANUAL') {
+          newManualAmounts[s.userId] = s.amount;
+        } else if (existingEntry.splitType === 'EQUAL') {
+          // For equal splits, just set the amounts
           newManualAmounts[s.userId] = s.amount;
         }
       });
@@ -195,52 +200,117 @@ const SplitExpenseModal = ({ isOpen, onClose, groupId, onExpenseCreated, existin
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateSplit()) return;
 
     setLoading(true);
     try {
       const userIds = selectedUsers.map(user => user.id);
-      
-      const entryData = {
-        title: expenseData.title,
-        date: expenseData.date,
-        groupId: groupId,
-        totalAmount: parseFloat(expenseData.totalAmount),
-        splitType: splitType,
-        userIds: userIds,
-        paidBy: paidBy,
-        autoMarkPayerAsPaid: true // Signal backend to auto-mark payer as paid
-      };
-
-      if (existingEntry) {
-        entryData.id = existingEntry.id;
-      }
-
-      // Add split-specific data
-      if (splitType === 'PERCENTAGE') {
-        entryData.percentages = userIds.map(userId => percentages[userId]);
-      } else if (splitType === 'MANUAL') {
-        entryData.amounts = userIds.map(userId => manualAmounts[userId]);
-      }
+      const totalAmount = parseFloat(expenseData.totalAmount);
 
       let result;
+
       if (existingEntry) {
-        result = await apiService.updateEntry(entryData);
+        // UPDATE: Send complete Entry object with splits array
+        const splits = [];
+
+        userIds.forEach(userId => {
+          let splitAmount = 0;
+
+          // Calculate split amount based on type
+          if (splitType === 'EQUAL') {
+            splitAmount = totalAmount / userIds.length;
+          } else if (splitType === 'PERCENTAGE') {
+            splitAmount = (percentages[userId] * totalAmount) / 100;
+          } else if (splitType === 'MANUAL') {
+            splitAmount = manualAmounts[userId];
+          }
+
+          // Check if this user is the payer (should be marked as paid)
+          const isPayer = userId === paidBy;
+
+          // Find existing split to preserve its state if not the payer
+          const existingSplit = existingEntry.splits?.find(s => s.userId === userId);
+
+          splits.push({
+            userId: userId,
+            amount: parseFloat(splitAmount.toFixed(2)),
+            isPaid: isPayer ? true : (existingSplit?.isPaid || existingSplit?.paid || false),
+            paid: isPayer ? true : (existingSplit?.isPaid || existingSplit?.paid || false),
+            ...(existingSplit?.paidDate && !isPayer && { paidDate: existingSplit.paidDate }),
+            ...(existingSplit?.stateChangeDate && !isPayer && { stateChangeDate: existingSplit.stateChangeDate })
+          });
+        });
+
+        // Check if all splits are settled
+        const isSettled = splits.every(s => s.isPaid || s.paid);
+
+        const updateData = {
+          id: existingEntry.id,
+          title: expenseData.title,
+          date: expenseData.date,
+          groupId: groupId,
+          amount: totalAmount,  // Backend expects 'amount', not 'totalAmount'
+          splitType: splitType,
+          paidBy: paidBy,
+          userIdCreateEntry: existingEntry.userIdCreateEntry || currentUser?.id,
+          splits: splits,
+          isSettled: isSettled
+        };
+
+        console.log('Updating entry with data:', updateData);
+        result = await apiService.updateEntry(updateData);
       } else {
+        // CREATE: Use the with-splits endpoint
+        const entryData = {
+          title: expenseData.title,
+          date: expenseData.date,
+          groupId: groupId,
+          totalAmount: totalAmount,
+          splitType: splitType,
+          userIds: userIds,
+          paidBy: paidBy,
+          autoMarkPayerAsPaid: true
+        };
+
+        // Add split-specific data
+        if (splitType === 'PERCENTAGE') {
+          entryData.percentages = userIds.map(userId => percentages[userId]);
+        } else if (splitType === 'MANUAL') {
+          entryData.amounts = userIds.map(userId => manualAmounts[userId]);
+        }
+
+        console.log('Creating entry with data:', entryData);
         result = await apiService.createEntryWithSplits(entryData);
       }
-      
+
       onExpenseCreated(result);
       onClose();
     } catch (error) {
-      console.error('Error creating split expense:', error);
-      console.error('Error details:', {
-        message: error.message,
-        status: error.status,
-        response: error.response
-      });
-      
+      console.error('=== ERROR DETAILS ===');
+      console.error('Error creating/updating split expense:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      console.error('Error object:', JSON.stringify(error, null, 2));
+
+      // Try to get more detailed response from fetch error
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+        try {
+          const errorText = await error.response.text();
+          console.error('Response body (text):', errorText);
+          try {
+            const errorJson = JSON.parse(errorText);
+            console.error('Response body (json):', errorJson);
+          } catch (parseError) {
+            console.error('Could not parse error response as JSON');
+          }
+        } catch (textError) {
+          console.error('Could not read response text:', textError);
+        }
+      }
+
       // Provide more specific error messages
       if (error.message.includes('403')) {
         setError('Access denied. Please make sure you are logged in.');
@@ -251,7 +321,7 @@ const SplitExpenseModal = ({ isOpen, onClose, groupId, onExpenseCreated, existin
       } else if (error.message.includes('500')) {
         setError('Server error. Please try again later.');
       } else {
-        setError(`Failed to create expense: ${error.message}`);
+        setError(`Failed to ${existingEntry ? 'update' : 'create'} expense: ${error.message}`);
       }
     } finally {
       setLoading(false);
@@ -489,7 +559,7 @@ const SplitExpenseModal = ({ isOpen, onClose, groupId, onExpenseCreated, existin
               disabled={loading || selectedUsers.length === 0}
               className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 transition duration-200"
             >
-              {loading ? 'Creating...' : 'Create Split Expense'}
+              {loading ? (existingEntry ? 'Updating...' : 'Creating...') : (existingEntry ? 'Update Expense' : 'Create Split Expense')}
             </button>
           </div>
         </form>
