@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import apiService from '../config/api';
+import apiService, { tokenManager } from '../config/api';
 
 const JoinByInvite = () => {
   const [searchParams] = useSearchParams();
@@ -19,11 +19,24 @@ const JoinByInvite = () => {
       return;
     }
 
+    // Check if user is authenticated
+    const isAuthenticated = tokenManager.isAuthenticated();
+
+    if (!isAuthenticated) {
+      // Store the invite token in localStorage and redirect to login
+      localStorage.setItem('pendingInviteToken', token);
+      navigate('/login');
+      return;
+    }
+
     const joinGroup = async () => {
       try {
         const response = await apiService.joinByInvite(token);
         setGroupName(response.name || 'the group');
         setSuccess(true);
+
+        // Clear any stored invite token
+        localStorage.removeItem('pendingInviteToken');
 
         // Redirect to the group after 2 seconds
         setTimeout(() => {
@@ -38,7 +51,10 @@ const JoinByInvite = () => {
         } else if (err.status === 400) {
           errorMessage = 'You are already a member of this group';
         } else if (err.status === 401) {
-          errorMessage = 'Please log in first';
+          // Not authenticated - redirect to login
+          localStorage.setItem('pendingInviteToken', token);
+          navigate('/login');
+          return;
         } else if (err.responseBody?.message) {
           errorMessage = err.responseBody.message;
         }

@@ -103,10 +103,19 @@ const SplitExpensesList = forwardRef(({ groupId, refreshTrigger, onEdit, onEntry
       setMyBalance(balanceData);
       setUnpaidSplits(unpaidData);
       setUsers(usersData);
-      
+
       // Debug balance calculation
       console.log('=== BALANCE DEBUG ===');
       console.log('My balance data:', balanceData);
+      console.log('Balance amount:', balanceData?.balance);
+      console.log('Number of entries:', entriesData.length);
+      console.log('Number of unpaid splits:', unpaidData.length);
+
+      // Log all splits status for debugging
+      const allSplits = entriesData.flatMap(e => e.splits || []);
+      const paidSplits = allSplits.filter(s => s.isPaid || s.paid);
+      const unpaidSplitsCount = allSplits.filter(s => !(s.isPaid || s.paid));
+      console.log(`Total splits: ${allSplits.length}, Paid: ${paidSplits.length}, Unpaid: ${unpaidSplitsCount.length}`);
       console.log('Current user info:', balanceData?.userInfo);
       console.log('Current user ID:', balanceData?.userInfo?.id);
       console.log('All users:', usersData);
@@ -187,51 +196,44 @@ const SplitExpensesList = forwardRef(({ groupId, refreshTrigger, onEdit, onEntry
     const paymentData = { entryId, userId, paidDate };
     console.log('Payment data being sent:', paymentData);
 
-    // Save the previous state for rollback
-    const previousEntries = entries;
-
     try {
-      // Update local state FIRST for instant UI feedback (optimistic update)
-      setEntries(prevEntries =>
-        prevEntries.map(entry => {
-          if (entry.id === entryId) {
-            return {
-              ...entry,
-              splits: entry.splits.map(split =>
-                split.userId === userId
-                  ? { ...split, isPaid: true, paid: true, stateChangeDate: paidDate }
-                  : split
-              )
-            };
-          }
-          return entry;
-        })
-      );
-
-      // Then make API call in background
+      // Make API call and get the updated entry back
       const result = await apiService.markSplitAsPaid(paymentData);
-      console.log('Mark as paid result:', result);
+      console.log('✅ Mark as paid result:', result);
 
-      // Only refresh balance data if not part of a batch operation
+      // Update entries with the server response (which has accurate isPaid and isSettled status)
+      if (result.entry) {
+        setEntries(prevEntries =>
+          prevEntries.map(entry =>
+            entry.id === entryId ? result.entry : entry
+          )
+        );
+        console.log('📝 Updated entry with server response:', result.entry);
+      }
+
+      // Refresh balance data if not part of a batch operation
       if (!skipRefresh) {
-        // Refresh only balance without refetching everything
+        console.log('🔄 Refreshing balance after mark as paid...');
         const balanceData = await apiService.getMyBalance(groupId).catch(() => null);
         if (balanceData) {
+          console.log('📊 New balance after paid:', balanceData.balance);
           setMyBalance(balanceData);
         }
       }
     } catch (error) {
-      console.error('Error marking split as paid:', error);
+      console.error('❌ Error marking split as paid:', error);
       console.error('Error details:', error.message);
-
-      // ROLLBACK: Revert to previous state
-      setEntries(previousEntries);
 
       // Show error message to user
       setError(`Failed to mark split as paid. ${error.responseBody?.message || error.message}`);
 
       // Clear error after 5 seconds
       setTimeout(() => setError(''), 5000);
+
+      // Refetch to ensure UI is in sync with server
+      if (!skipRefresh) {
+        await fetchData();
+      }
     }
   };
 
@@ -253,51 +255,44 @@ const SplitExpensesList = forwardRef(({ groupId, refreshTrigger, onEdit, onEntry
     const paymentData = { entryId, userId, unpaidDate };
     console.log('Unpaid data being sent:', paymentData);
 
-    // Save the previous state for rollback
-    const previousEntries = entries;
-
     try {
-      // Update local state FIRST for instant UI feedback (optimistic update)
-      setEntries(prevEntries =>
-        prevEntries.map(entry => {
-          if (entry.id === entryId) {
-            return {
-              ...entry,
-              splits: entry.splits.map(split =>
-                split.userId === userId
-                  ? { ...split, isPaid: false, paid: false, stateChangeDate: unpaidDate }
-                  : split
-              )
-            };
-          }
-          return entry;
-        })
-      );
-
-      // Then make API call in background
+      // Make API call and get the updated entry back
       const result = await apiService.markSplitAsUnpaid(paymentData);
-      console.log('Mark as unpaid result:', result);
+      console.log('✅ Mark as unpaid result:', result);
 
-      // Only refresh balance data if not part of a batch operation
+      // Update entries with the server response (which has accurate isPaid and isSettled status)
+      if (result.entry) {
+        setEntries(prevEntries =>
+          prevEntries.map(entry =>
+            entry.id === entryId ? result.entry : entry
+          )
+        );
+        console.log('📝 Updated entry with server response:', result.entry);
+      }
+
+      // Refresh balance data if not part of a batch operation
       if (!skipRefresh) {
-        // Refresh only balance without refetching everything
+        console.log('🔄 Refreshing balance after mark as unpaid...');
         const balanceData = await apiService.getMyBalance(groupId).catch(() => null);
         if (balanceData) {
+          console.log('📊 New balance after unpaid:', balanceData.balance);
           setMyBalance(balanceData);
         }
       }
     } catch (error) {
-      console.error('Error marking split as unpaid:', error);
+      console.error('❌ Error marking split as unpaid:', error);
       console.error('Error details:', error.message);
-
-      // ROLLBACK: Revert to previous state
-      setEntries(previousEntries);
 
       // Show error message to user
       setError(`Failed to mark split as unpaid. ${error.responseBody?.message || error.message}`);
 
       // Clear error after 5 seconds
       setTimeout(() => setError(''), 5000);
+
+      // Refetch to ensure UI is in sync with server
+      if (!skipRefresh) {
+        await fetchData();
+      }
     }
   };
 
@@ -472,13 +467,16 @@ const SplitExpensesList = forwardRef(({ groupId, refreshTrigger, onEdit, onEntry
         });
       }
 
-      // Refetch data to get accurate state from server
+      // Refetch ALL data to get accurate state from server (including recalculated balance)
+      console.log('🔄 Refetching all data after batch settlement...');
       await fetchData();
+      console.log('✅ Data refetch complete');
 
       // If all succeeded, clear selection and exit multi-select mode
       if (failureCount === 0) {
         setSelectedExpenses(new Set());
         setIsMultiSelectMode(false);
+        console.log('✅ Batch settlement completed successfully');
       } else {
         // Some failed - show detailed error
         const errorMessages = failures.map(f => {
@@ -577,19 +575,21 @@ const SplitExpensesList = forwardRef(({ groupId, refreshTrigger, onEdit, onEntry
 
   return (
     <div className="space-y-6">
-      {/* Balance Summary */}
+      {/* Balance Summary - Mobile Optimized */}
       {myBalance && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-2">Your Balance</h3>
-          <div className="flex items-center justify-between">
-            <span className="text-gray-600">Current Balance:</span>
-            <span className={`text-xl font-bold ${myBalance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 sm:p-4 rounded-lg border border-blue-200">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2">Your Balance</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+            <span className="text-sm sm:text-base text-gray-600">Current Balance:</span>
+            <span className={`text-lg sm:text-xl font-bold ${myBalance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatCurrency(Math.abs(myBalance.balance))}
-              {myBalance.balance >= 0 ? ' (you are owed)' : ' (you owe)'}
+              <span className="text-sm sm:text-base ml-1">
+                {myBalance.balance >= 0 ? '(you are owed)' : '(you owe)'}
+              </span>
             </span>
           </div>
           {myBalance.userInfo && (
-            <div className="text-sm text-gray-500 mt-1">
+            <div className="text-xs sm:text-sm text-gray-500 mt-1">
               {myBalance.userInfo.name} ({myBalance.userInfo.email})
             </div>
           )}
@@ -620,15 +620,15 @@ const SplitExpensesList = forwardRef(({ groupId, refreshTrigger, onEdit, onEntry
         </div>
       )}
 
-      {/* Split Expenses List */}
+      {/* Split Expenses List - Mobile Optimized */}
       <div>
-        <div className="flex justify-between items-center mb-6 gap-3">
-          <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <span className="w-1 h-7 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></span>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
+          <h3 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <span className="w-1 h-6 sm:h-7 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></span>
             Split Expenses
           </h3>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-end">
             {/* Multi-Select Toggle */}
             <button
               onClick={() => {
@@ -770,38 +770,41 @@ const SplitExpensesList = forwardRef(({ groupId, refreshTrigger, onEdit, onEntry
         ) : (
           <div className="space-y-4">
             {filteredAndSortedEntries.map((entry) => (
-              <div key={entry.id} className={`bg-white border rounded-xl p-5 transition-all ${
+              <div key={entry.id} className={`bg-white border rounded-xl p-3 sm:p-5 transition-all ${
                 selectedExpenses.has(entry.id)
-                  ? 'border-blue-500 border-2 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg scale-[1.02]'
+                  ? 'border-blue-500 border-2 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg scale-[1.01] sm:scale-[1.02]'
                   : 'border-gray-200 hover:shadow-lg hover:border-gray-300'
               }`}>
-                {/* Entry Header */}
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-start gap-3">
+                {/* Entry Header - Mobile Optimized */}
+                <div className="flex flex-col gap-3 mb-3">
+                  <div className="flex items-start gap-2 sm:gap-3">
                     {/* Checkbox for multi-select */}
                     {isMultiSelectMode && (
                       <input
                         type="checkbox"
                         checked={selectedExpenses.has(entry.id)}
                         onChange={() => toggleExpenseSelection(entry.id)}
-                        className="mt-1 w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 w-4 h-4 sm:w-5 sm:h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                       />
                     )}
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-800">{entry.title}</h4>
-                      <div className="text-sm text-gray-500">
-                        {new Date(entry.date).toLocaleDateString()} • {getSplitTypeLabel(entry.splitType)}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-base sm:text-lg font-semibold text-gray-800 truncate">{entry.title}</h4>
+                      <div className="text-xs sm:text-sm text-gray-500 flex flex-wrap gap-1">
+                        <span>{new Date(entry.date).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <span>{getSplitTypeLabel(entry.splitType)}</span>
                       </div>
                       {entry.paidBy && (
                         <div className="text-xs text-blue-600 mt-1">
-                          Paid by: {getUserDisplayName(entry.paidBy) || 'Unknown User'}
+                          Paid by: {getUserDisplayName(entry.paidBy)?.split(' ')[0] || 'Unknown'}
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-800">
+
+                  <div className="flex justify-between items-center gap-3 pt-2 border-t sm:border-t-0 border-gray-100">
+                    <div className="text-left sm:text-right">
+                      <div className="text-xl sm:text-2xl font-bold text-gray-800">
                         {formatCurrency(entry.totalAmount || entry.amount || 0)}
                       </div>
                       <div className="text-xs text-gray-500 font-medium">
@@ -811,15 +814,15 @@ const SplitExpensesList = forwardRef(({ groupId, refreshTrigger, onEdit, onEntry
                     <div className="flex gap-2">
                       <button
                         onClick={() => onEdit(entry)}
-                        className="px-3 py-1.5 text-xs font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all shadow-sm"
+                        className="px-2 sm:px-3 py-1.5 text-xs font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all shadow-sm whitespace-nowrap"
                       >
-                        ✎ Edit
+                        ✎ <span className="hidden sm:inline">Edit</span>
                       </button>
                       <button
                         onClick={() => handleDelete(entry.id)}
-                        className="px-3 py-1.5 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all shadow-sm"
+                        className="px-2 sm:px-3 py-1.5 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all shadow-sm whitespace-nowrap"
                       >
-                        ✕ Delete
+                        ✕ <span className="hidden sm:inline">Delete</span>
                       </button>
                     </div>
                   </div>

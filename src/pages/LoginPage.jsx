@@ -10,27 +10,38 @@ const LoginPage = () => {
     console.log("In responseGoogle.")
     console.log(response);
     console.log(response.credential);
-    
+
     // Check for Google response token
     if (response.credential) {
       try {
         const authResponse = await apiService.authenticate(response.credential);
-        
+
         // Store JWT token if returned
         if (authResponse && authResponse.token) {
           localStorage.setItem('jwt_token', authResponse.token);
           console.log("JWT token stored successfully");
         }
-        
-        console.log("Login successfully.")
-        navigate('/groups');
+
+        console.log("Login successfully.");
+
+        // Check if there's a pending invite token
+        const pendingInviteToken = localStorage.getItem('pendingInviteToken');
+
+        if (pendingInviteToken) {
+          console.log("Found pending invite token, redirecting to join page...");
+          // Redirect to join page with the invite token
+          navigate(`/join?token=${pendingInviteToken}`);
+        } else {
+          // Normal flow - go to groups page
+          navigate('/groups');
+        }
       } catch (error) {
         if (error instanceof SyntaxError) {
           console.error('Received non-JSON response from the server. Raw response:', error);
         } else {
           console.error('Login error:', error);
         }
-      }      
+      }
     } else {
       // Handle failed Google login
       console.error('Google login was unsuccessful');
