@@ -105,71 +105,66 @@ const SplitExpensesList = forwardRef(({ groupId, refreshTrigger, onEdit, onEntry
       setUsers(usersData);
 
       // Debug balance calculation
-      console.log('=== BALANCE DEBUG ===');
-      console.log('My balance data:', balanceData);
-      console.log('Balance amount:', balanceData?.balance);
-      console.log('Number of entries:', entriesData.length);
-      console.log('Number of unpaid splits:', unpaidData.length);
+      console.log('\n===========================================');
+      console.log('🔍 COMPREHENSIVE BALANCE DEBUG');
+      console.log('===========================================');
+      console.log('📊 Balance data from backend:', balanceData);
+      console.log('💰 Backend calculated balance:', balanceData?.balance);
+      console.log('👤 Current user:', balanceData?.userInfo);
+      console.log('🆔 Current user ID:', balanceData?.userId || balanceData?.userInfo?.id);
 
-      // Log all splits status for debugging
-      const allSplits = entriesData.flatMap(e => e.splits || []);
-      const paidSplits = allSplits.filter(s => s.isPaid || s.paid);
-      const unpaidSplitsCount = allSplits.filter(s => !(s.isPaid || s.paid));
-      console.log(`Total splits: ${allSplits.length}, Paid: ${paidSplits.length}, Unpaid: ${unpaidSplitsCount.length}`);
-      console.log('Current user info:', balanceData?.userInfo);
-      console.log('Current user ID:', balanceData?.userInfo?.id);
-      console.log('All users:', usersData);
-      console.log('Entries with splits:', entriesData.map(entry => ({
-        title: entry.title,
-        paidBy: entry.paidBy,
-        totalAmount: entry.totalAmount || entry.amount || 0,
-        amount: entry.amount,
-        splits: entry.splits?.map(split => ({
-          userId: split.userId,
-          amount: split.amount,
-          paid: split.paid || split.isPaid,
-          userEmail: usersData.find(u => u.id === split.userId)?.email,
-          userName: usersData.find(u => u.id === split.userId)?.name
-        }))
-      })));
-      
-      // Manual balance calculation for debugging
-      if (balanceData?.userInfo?.id && entriesData.length > 0) {
-        const currentUserId = balanceData.userInfo.id;
-        let manualBalance = 0;
-        
-        entriesData.forEach(entry => {
-          // Normalize the amount field - use totalAmount if available, otherwise amount
-          const totalAmount = entry.totalAmount || entry.amount || 0;
+      // Calculate what the balance SHOULD be based on splits
+      const currentUserId = balanceData?.userId || balanceData?.userInfo?.id;
+      let calculatedBalance = 0;
+      let mySplitDetails = [];
 
-          console.log(`\n--- Processing entry: ${entry.title} ---`);
-          console.log('Entry paidBy:', entry.paidBy);
-          console.log('Entry total amount:', totalAmount);
-          console.log('Current user is payer:', entry.paidBy === currentUserId);
+      console.log('\n📝 Analyzing all entries and splits:');
+      entriesData.forEach((entry, idx) => {
+        console.log(`\n  Entry ${idx + 1}: "${entry.title}"`);
+        console.log(`    Total: $${entry.totalAmount || entry.amount}`);
+        console.log(`    Paid by: ${entry.paidBy}`);
+        console.log(`    Settled: ${entry.isSettled ? 'YES' : 'NO'}`);
 
-          if (entry.paidBy === currentUserId) {
-            // I paid this expense, so I should be owed money
-            console.log('I paid this expense, adding to balance:', totalAmount);
-            manualBalance += totalAmount;
+        if (entry.splits) {
+          entry.splits.forEach(split => {
+            const isPaidStatus = split.isPaid || split.paid;
+            console.log(`      Split - User: ${split.userId}, Amount: $${split.amount}, Paid: ${isPaidStatus ? 'YES' : 'NO'}`);
 
-            // Subtract my own share (I don't owe myself)
-            const myShare = entry.splits?.find(split => split.userId === currentUserId)?.amount || 0;
-            console.log('My share of this expense:', myShare);
-            manualBalance -= myShare;
-            console.log('Balance after subtracting my share:', manualBalance);
-          } else {
-            // Someone else paid, I owe my share if not paid
-            const myShare = entry.splits?.find(split => split.userId === currentUserId);
-            if (myShare && !(myShare.paid || myShare.isPaid)) {
-              console.log('I owe my unpaid share:', myShare.amount);
-              manualBalance -= myShare.amount;
+            if (split.userId === currentUserId) {
+              mySplitDetails.push({
+                entry: entry.title,
+                amount: split.amount,
+                isPaid: isPaidStatus,
+                paidBy: entry.paidBy,
+                iAmPayer: entry.paidBy === currentUserId
+              });
+
+              // If I paid for this entry, others owe me
+              if (entry.paidBy === currentUserId) {
+                // Only count unpaid amounts that others owe me
+                if (!isPaidStatus) {
+                  calculatedBalance += split.amount;
+                  console.log(`        ➕ I paid, others owe me: +$${split.amount} (unpaid)`);
+                }
+              } else {
+                // I owe someone else
+                if (!isPaidStatus) {
+                  calculatedBalance -= split.amount;
+                  console.log(`        ➖ I owe someone: -$${split.amount} (unpaid)`);
+                }
+              }
             }
-          }
-        });
-        
-        console.log('Manual calculated balance:', manualBalance);
-        console.log('Backend calculated balance:', balanceData.balance);
-      }
+          });
+        }
+      });
+
+      console.log('\n📊 MY SPLIT SUMMARY:');
+      console.log('My splits:', mySplitDetails);
+      console.log(`\n💵 FRONTEND calculated balance: $${calculatedBalance.toFixed(2)}`);
+      console.log(`💵 BACKEND calculated balance: $${balanceData?.balance || 0}`);
+      console.log(`⚠️ Difference: $${Math.abs(calculatedBalance - (balanceData?.balance || 0)).toFixed(2)}`);
+      console.log('===========================================\n');
+
     } catch (error) {
       console.error('Error fetching split data:', error);
       setError('Failed to load split expenses');
