@@ -5,6 +5,8 @@ import LoginPage from './pages/LoginPage'; // Make sure this component exists
 import Group from './pages/Group'; // Make sure this component exists
 import Check from './components/Check';
 import JoinByInvite from './pages/JoinByInvite';
+import Privacy from './pages/Privacy';
+import Support from './pages/Support';
 import ApiDebugInfo from './components/ApiDebugInfo';
 
 function App() {
@@ -15,6 +17,8 @@ function App() {
         <Route path="/groups" element={<Group />} />
         <Route path="/checks/:groupId" element={<Check />} />
         <Route path="/join" element={<JoinByInvite />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/support" element={<Support />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
       <ApiDebugInfo />
